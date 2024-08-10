@@ -115,11 +115,79 @@ malaIdea(GrupoEtario, Parque) :-
 hayUnaAtraccionParaTodes(Grupo, Parque) :-
     tiene(Parque, Atraccion),
     forall(perteneceAGrupoEtario(Persona, Grupo), puedeSubirV2(Persona, Atraccion)).
-    % PARA TODOS LAS PERSONAS QUE FORMAN PARTEN DEL GRUPO, las mismas pueden subir a la atraccion
+    % PARA TODOS LAS PERSONAS QUE FORMAN PARTEN DEL GRUPO, las mismas pueden subir a la atraccion del parque 
         
-%malaIdeaV2(GrupoEtario, Parque) :-
-%    persona(Persona, GrupoEtario, _, _),
-%    tiene(Parque, _),
-%    not((tiene(Parque,Atraccion), puedeSubir(Persona, Atraccion))).
+% ----------- PROGRAMAS --------------------
+
+% 1) programaLogico/1, me dice si un programa es "bueno", es decir, todos los juegos están en el mismo parque y no hay juegos repetidos
+
+% Un programa es una lista ordenada de atracciones, que tienen que estar todas en el mismo parque
+% Obviamente el programa no tiene por qué incluir todos los juegos del parque, es una selección ordenada.
+
+parque(parqueDeLaCosta, [trenFantasma, montanaRusa, maquinaTiquetera]).
+parque(parqueAcuatico, [toboganGigante, rioLento, piscinaDeOlas]).
+
+programaLogico(Programa) :-
+    estanEnElMismoParque(Programa),
+    sinRepetir(Programa).
+
+estanEnElMismoParque(Programa) :-
+    tiene(Parque, _),
+    forall(member(Atraccion, Programa), tiene(Parque, Atraccion)).
+
+estanEnElMismoParqueV2(Programa) :-
+    parque(_, Atracciones),
+    forall(member(Atraccion, Programa), member(Atraccion, Atracciones)).
+
+sinRepetir([]).
+sinRepetir([_]).
+sinRepetir([X|Lista]) :-
+    not(member(X, Lista)),
+    sinRepetir(Lista).
+    
+% 2) hastaAca/3, relaciona a una persona P y un programa Q, con el subprograma S que se compone de las atracciones iniciales 
+% de Q hasta la primera a la que P no puede subir (excluida obviamente).
+% Por ejemplo, si el programa tiene 5 atracciones y P no puede subir a la tercera, pero sí a las dos primeras, el subprograma 
+% S deberá incluir a esas dos primeras atracciones.
+
+%hastaAca(Persona, Programa, Subprograma) :-
+
+hastaAca(_, [], []).
+hastaAca(P, [X|_], []) :- not(puedeSubirV2(P,X)). % LA SEGUNDA LISTA VA A ESTAR VACIA, SI YA LA PRIMERA ATRACCION DE LA PRIMERA LISTA LA PERSONA NO PUEDE SUBIR
+hastaAca(P, [X|XS], [X|YS]) :- puedeSubirV2(P,X), hastaAca(P, XS, YS).
+
+% ----------- PASAPORTES --------------------
+
+% juegoComun(Atraccion, Costo).
+juegoComun(trenFantasma, 5).
+juegoComun(maquinaTiquetera, 2).
+juegoComun(rioLento, 3).
+juegoComun(piscinaOlas, 4).
+
+juegoPremium(montaniaRusa).
+juegoPremium(toboganGigante).
+
+% Pasaportes
+tienePasaporte(nina, premium).
+tienePasaporte(marcos, basico(10)).
+tienePasaporte(osvaldo, flex(15, montaniaRusa)).
+tienePasaporte(ana, basico(14)).
+
+puedeSubirPasaporte(Persona, Atraccion) :-
+    puedeSubirV2(Persona, Atraccion),
+    tienePasaporte(Persona, Pasaporte),
+    cumpleRequisitoPasaporte(Pasaporte, Atraccion).
+
+cumpleRequisitoPasaporte(basico(Creditos), Atraccion) :-
+    juegoComun(Atraccion, Costo),
+    Creditos >= Costo.
+
+cumpleRequisitoPasaporte(flex(Creditos, Atraccion), Atraccion) :-  
+    juegoPremium(Atraccion).
+
+cumpleRequisitoPasaporte(flex(Creditos, _), Atraccion) :- 
+    cumpleRequisitoPasaporte(basico(Creditos), Atraccion).
+
+cumpleRequisitoPasaporte(premium, _).
 
 
